@@ -10,10 +10,8 @@ import com.yupi.booj.common.ResultUtils;
 import com.yupi.booj.constant.UserConstant;
 import com.yupi.booj.exception.BusinessException;
 import com.yupi.booj.exception.ThrowUtils;
-import com.yupi.booj.model.dto.question.QuestionAddRequest;
-import com.yupi.booj.model.dto.question.QuestionEditRequest;
-import com.yupi.booj.model.dto.question.QuestionQueryRequest;
-import com.yupi.booj.model.dto.question.QuestionUpdateRequest;
+import com.yupi.booj.model.dto.question.*;
+import com.yupi.booj.model.dto.user.UserQueryRequest;
 import com.yupi.booj.model.entity.Question;
 import com.yupi.booj.model.entity.User;
 import com.yupi.booj.model.vo.QuestionVO;
@@ -39,7 +37,7 @@ import java.util.List;
 public class QuestionController {
 
     @Resource
-    private QuestionService QuestionService;
+    private QuestionService questionService;
 
     @Resource
     private UserService userService;
@@ -49,29 +47,37 @@ public class QuestionController {
     /**
      * 创建
      *
-     * @param QuestionAddRequest
+     * @param questionAddRequest
      * @param request
      * @return
      */
     @PostMapping("/add")
-    public BaseResponse<Long> addQuestion(@RequestBody QuestionAddRequest QuestionAddRequest, HttpServletRequest request) {
-        if (QuestionAddRequest == null) {
+    public BaseResponse<Long> addQuestion(@RequestBody QuestionAddRequest questionAddRequest, HttpServletRequest request) {
+        if (questionAddRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Question Question = new Question();
-        BeanUtils.copyProperties(QuestionAddRequest, Question);
-        List<String> tags = QuestionAddRequest.getTags();
+        Question question = new Question();
+        BeanUtils.copyProperties(questionAddRequest, question);
+        List<String> tags = questionAddRequest.getTags();
         if (tags != null) {
-            Question.setTags(JSONUtil.toJsonStr(tags));
+            question.setTags(JSONUtil.toJsonStr(tags));
         }
-        QuestionService.validQuestion(Question, true);
+        List<JudgeCase> judgeCase = questionAddRequest.getJudgeCase();
+        if(judgeCase != null) {
+            question.setJudgeCase(JSONUtil.toJsonStr(judgeCase));
+        }
+        JudgeConfig judgeConfig = questionAddRequest.getJudgeConfig();
+        if(judgeConfig != null) {
+            question.setJudgeConfig(JSONUtil.toJsonStr(judgeConfig));
+        }
+        questionService.validQuestion(question, true);
         User loginUser = userService.getLoginUser(request);
-        Question.setUserId(loginUser.getId());
-        Question.setFavourNum(0);
-        Question.setThumbNum(0);
-        boolean result = QuestionService.save(Question);
+        question.setUserId(loginUser.getId());
+        question.setFavourNum(0);
+        question.setThumbNum(0);
+        boolean result = questionService.save(question);
         ThrowUtils.throwIf(!result, ErrorCode.OPERATION_ERROR);
-        long newQuestionId = Question.getId();
+        long newQuestionId = question.getId();
         return ResultUtils.success(newQuestionId);
     }
 
@@ -90,41 +96,49 @@ public class QuestionController {
         User user = userService.getLoginUser(request);
         long id = deleteRequest.getId();
         // 判断是否存在
-        Question oldQuestion = QuestionService.getById(id);
+        Question oldQuestion = questionService.getById(id);
         ThrowUtils.throwIf(oldQuestion == null, ErrorCode.NOT_FOUND_ERROR);
         // 仅本人或管理员可删除
         if (!oldQuestion.getUserId().equals(user.getId()) && !userService.isAdmin(request)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-        boolean b = QuestionService.removeById(id);
+        boolean b = questionService.removeById(id);
         return ResultUtils.success(b);
     }
 
     /**
      * 更新（仅管理员）
      *
-     * @param QuestionUpdateRequest
+     * @param questionUpdateRequest
      * @return
      */
     @PostMapping("/update")
     @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Boolean> updateQuestion(@RequestBody QuestionUpdateRequest QuestionUpdateRequest) {
-        if (QuestionUpdateRequest == null || QuestionUpdateRequest.getId() <= 0) {
+    public BaseResponse<Boolean> updateQuestion(@RequestBody QuestionUpdateRequest questionUpdateRequest) {
+        if (questionUpdateRequest == null || questionUpdateRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Question Question = new Question();
-        BeanUtils.copyProperties(QuestionUpdateRequest, Question);
-        List<String> tags = QuestionUpdateRequest.getTags();
+        Question question = new Question();
+        BeanUtils.copyProperties(questionUpdateRequest, question);
+        List<String> tags = questionUpdateRequest.getTags();
         if (tags != null) {
-            Question.setTags(JSONUtil.toJsonStr(tags));
+            question.setTags(JSONUtil.toJsonStr(tags));
+        }
+        List<JudgeCase> judgeCase = questionUpdateRequest.getJudgeCase();
+        if(judgeCase != null) {
+            question.setJudgeCase(JSONUtil.toJsonStr(judgeCase));
+        }
+        JudgeConfig judgeConfig = questionUpdateRequest.getJudgeConfig();
+        if(judgeConfig != null) {
+            question.setJudgeConfig(JSONUtil.toJsonStr(judgeConfig));
         }
         // 参数校验
-        QuestionService.validQuestion(Question, false);
-        long id = QuestionUpdateRequest.getId();
+        questionService.validQuestion(question, false);
+        long id = questionUpdateRequest.getId();
         // 判断是否存在
-        Question oldQuestion = QuestionService.getById(id);
+        Question oldQuestion = questionService.getById(id);
         ThrowUtils.throwIf(oldQuestion == null, ErrorCode.NOT_FOUND_ERROR);
-        boolean result = QuestionService.updateById(Question);
+        boolean result = questionService.updateById(question);
         return ResultUtils.success(result);
     }
 
@@ -139,71 +153,73 @@ public class QuestionController {
         if (id <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Question Question = QuestionService.getById(id);
-        if (Question == null) {
+        Question question = questionService.getById(id);
+        if (question == null) {
             throw new BusinessException(ErrorCode.NOT_FOUND_ERROR);
         }
-        return ResultUtils.success(QuestionService.getQuestionVO(Question, request));
-    }
-
-    /**
-     * 分页获取列表（仅管理员）
-     *
-     * @param QuestionQueryRequest
-     * @return
-     */
-    @PostMapping("/list/page")
-    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
-    public BaseResponse<Page<Question>> listQuestionByPage(@RequestBody QuestionQueryRequest QuestionQueryRequest) {
-        long current = QuestionQueryRequest.getCurrent();
-        long size = QuestionQueryRequest.getPageSize();
-        Page<Question> QuestionPage = QuestionService.page(new Page<>(current, size),
-                QuestionService.getQueryWrapper(QuestionQueryRequest));
-        return ResultUtils.success(QuestionPage);
+        return ResultUtils.success(questionService.getQuestionVO(question, request));
     }
 
     /**
      * 分页获取列表（封装类）
      *
-     * @param QuestionQueryRequest
+     * @param questionQueryRequest
      * @param request
      * @return
      */
     @PostMapping("/list/page/vo")
-    public BaseResponse<Page<QuestionVO>> listQuestionVOByPage(@RequestBody QuestionQueryRequest QuestionQueryRequest,
+    public BaseResponse<Page<QuestionVO>> listQuestionVOByPage(@RequestBody QuestionQueryRequest questionQueryRequest,
             HttpServletRequest request) {
-        long current = QuestionQueryRequest.getCurrent();
-        long size = QuestionQueryRequest.getPageSize();
+        long current = questionQueryRequest.getCurrent();
+        long size = questionQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-        Page<Question> QuestionPage = QuestionService.page(new Page<>(current, size),
-                QuestionService.getQueryWrapper(QuestionQueryRequest));
-        return ResultUtils.success(QuestionService.getQuestionVOPage(QuestionPage, request));
+        Page<Question> questionPage = questionService.page(new Page<>(current, size),
+                questionService.getQueryWrapper(questionQueryRequest));
+        return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
     }
 
     /**
      * 分页获取当前用户创建的资源列表
      *
-     * @param QuestionQueryRequest
+     * @param questionQueryRequest
      * @param request
      * @return
      */
     @PostMapping("/my/list/page/vo")
-    public BaseResponse<Page<QuestionVO>> listMyQuestionVOByPage(@RequestBody QuestionQueryRequest QuestionQueryRequest,
+    public BaseResponse<Page<QuestionVO>> listMyQuestionVOByPage(@RequestBody QuestionQueryRequest questionQueryRequest,
             HttpServletRequest request) {
-        if (QuestionQueryRequest == null) {
+        if (questionQueryRequest == null) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
         User loginUser = userService.getLoginUser(request);
-        QuestionQueryRequest.setUserId(loginUser.getId());
-        long current = QuestionQueryRequest.getCurrent();
-        long size = QuestionQueryRequest.getPageSize();
+        questionQueryRequest.setUserId(loginUser.getId());
+        long current = questionQueryRequest.getCurrent();
+        long size = questionQueryRequest.getPageSize();
         // 限制爬虫
         ThrowUtils.throwIf(size > 20, ErrorCode.PARAMS_ERROR);
-        Page<Question> QuestionPage = QuestionService.page(new Page<>(current, size),
-                QuestionService.getQueryWrapper(QuestionQueryRequest));
-        return ResultUtils.success(QuestionService.getQuestionVOPage(QuestionPage, request));
+        Page<Question> questionPage = questionService.page(new Page<>(current, size),
+                questionService.getQueryWrapper(questionQueryRequest));
+        return ResultUtils.success(questionService.getQuestionVOPage(questionPage, request));
     }
+
+
+    /**
+     * 分页获取列表（仅管理员）
+     *
+     * @param questionQueryRequest
+     * @return
+     */
+    @PostMapping("/list/page")
+    @AuthCheck(mustRole = UserConstant.ADMIN_ROLE)
+    public BaseResponse<Page<Question>> listQuestionByPage(@RequestBody QuestionQueryRequest questionQueryRequest) {
+        long current = questionQueryRequest.getCurrent();
+        long size = questionQueryRequest.getPageSize();
+        Page<Question> questionPage = questionService.page(new Page<>(current, size),
+                questionService.getQueryWrapper(questionQueryRequest));
+        return ResultUtils.success(questionPage);
+    }
+
 
     // endregion
 
@@ -211,33 +227,41 @@ public class QuestionController {
     /**
      * 编辑（用户）
      *
-     * @param QuestionEditRequest
+     * @param questionEditRequest
      * @param request
      * @return
      */
     @PostMapping("/edit")
-    public BaseResponse<Boolean> editQuestion(@RequestBody QuestionEditRequest QuestionEditRequest, HttpServletRequest request) {
-        if (QuestionEditRequest == null || QuestionEditRequest.getId() <= 0) {
+    public BaseResponse<Boolean> editQuestion(@RequestBody QuestionEditRequest questionEditRequest, HttpServletRequest request) {
+        if (questionEditRequest == null || questionEditRequest.getId() <= 0) {
             throw new BusinessException(ErrorCode.PARAMS_ERROR);
         }
-        Question Question = new Question();
-        BeanUtils.copyProperties(QuestionEditRequest, Question);
-        List<String> tags = QuestionEditRequest.getTags();
+        Question question = new Question();
+        BeanUtils.copyProperties(questionEditRequest, question);
+        List<String> tags = questionEditRequest.getTags();
         if (tags != null) {
-            Question.setTags(JSONUtil.toJsonStr(tags));
+            question.setTags(JSONUtil.toJsonStr(tags));
+        }
+        List<JudgeCase> judgeCase = questionEditRequest.getJudgeCase();
+        if(judgeCase != null) {
+            question.setJudgeCase(JSONUtil.toJsonStr(judgeCase));
+        }
+        JudgeConfig judgeConfig = questionEditRequest.getJudgeConfig();
+        if(judgeConfig != null) {
+            question.setJudgeConfig(JSONUtil.toJsonStr(judgeConfig));
         }
         // 参数校验
-        QuestionService.validQuestion(Question, false);
+        questionService.validQuestion(question, false);
         User loginUser = userService.getLoginUser(request);
-        long id = QuestionEditRequest.getId();
+        long id = questionEditRequest.getId();
         // 判断是否存在
-        Question oldQuestion = QuestionService.getById(id);
+        Question oldQuestion = questionService.getById(id);
         ThrowUtils.throwIf(oldQuestion == null, ErrorCode.NOT_FOUND_ERROR);
         // 仅本人或管理员可编辑
         if (!oldQuestion.getUserId().equals(loginUser.getId()) && !userService.isAdmin(loginUser)) {
             throw new BusinessException(ErrorCode.NO_AUTH_ERROR);
         }
-        boolean result = QuestionService.updateById(Question);
+        boolean result = questionService.updateById(question);
         return ResultUtils.success(result);
     }
 
