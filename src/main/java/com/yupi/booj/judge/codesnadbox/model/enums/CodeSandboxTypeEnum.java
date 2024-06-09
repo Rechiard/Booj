@@ -1,4 +1,4 @@
-package com.yupi.booj.model.enums;
+package com.yupi.booj.judge.codesnadbox.model.enums;
 
 import org.apache.commons.lang3.ObjectUtils;
 
@@ -7,22 +7,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- * 题目提交编程语言枚举
- *
- * @author <a href="https://github.com/liyupi">程序员鱼皮</a>
- * @from <a href="https://yupi.icu">编程导航知识星球</a>
+ * 代码沙箱类型
  */
-public enum QuestionSubmitLanguageEnum {
+public enum CodeSandboxTypeEnum {
 
-    JAVA("java", "java"),
-    CPLUSPLUS("cpp", "cpp"),
-    GOLANG("go", "go");
+    EXAMPLE("示例沙箱", "example"),
+    REMOTE("远程沙箱", "remote"),
+    THIRD_PARTY("第三方沙箱", "thirdParty");
+
 
     private final String text;
 
     private final String value;
 
-    QuestionSubmitLanguageEnum(String text, String value) {
+    CodeSandboxTypeEnum(String text, String value) {
         this.text = text;
         this.value = value;
     }
@@ -42,11 +40,11 @@ public enum QuestionSubmitLanguageEnum {
      * @param value
      * @return
      */
-    public static QuestionSubmitLanguageEnum getEnumByValue(String value) {
+    public static CodeSandboxTypeEnum getEnumByValue(String value) {
         if (ObjectUtils.isEmpty(value)) {
             return null;
         }
-        for (QuestionSubmitLanguageEnum anEnum : QuestionSubmitLanguageEnum.values()) {
+        for (CodeSandboxTypeEnum anEnum : CodeSandboxTypeEnum.values()) {
             if (anEnum.value.equals(value)) {
                 return anEnum;
             }

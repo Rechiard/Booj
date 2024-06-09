@@ -7,6 +7,7 @@ import com.baomidou.mybatisplus.extension.service.impl.ServiceImpl;
 import com.yupi.booj.common.ErrorCode;
 import com.yupi.booj.constant.CommonConstant;
 import com.yupi.booj.exception.BusinessException;
+import com.yupi.booj.judge.JudgeService;
 import com.yupi.booj.model.dto.question.QuestionQueryRequest;
 import com.yupi.booj.model.dto.questionsubmit.QuestionSubmitAddRequest;
 import com.yupi.booj.model.dto.questionsubmit.QuestionSubmitQueryRequest;
@@ -23,8 +24,10 @@ import com.yupi.booj.service.QuestionSubmitService;
 import com.yupi.booj.mapper.QuestionSubmitMapper;
 import com.yupi.booj.service.UserService;
 import com.yupi.booj.utils.SqlUtils;
+import io.netty.util.concurrent.CompleteFuture;
 import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.annotation.Resource;
@@ -32,6 +35,7 @@ import javax.servlet.http.HttpServletRequest;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 
 /**
@@ -48,6 +52,11 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
 
     @Resource
     private UserService userService;
+
+    // 这里需要记笔记，QuestionSubmitService和JudgeService互相调用了，导致循环依赖，所以这里需要用到@Lazy注解进行懒加载
+    @Resource
+    @Lazy
+    private JudgeService judgeService;
 
     /**
      * 提交题目
@@ -86,7 +95,12 @@ public class QuestionSubmitServiceImpl extends ServiceImpl<QuestionSubmitMapper,
         if(! save){
             throw new BusinessException(ErrorCode.SYSTEM_ERROR, "数据插入失败");
         }
-        return questionSubmit.getId();
+        Long questionSubmitId = questionSubmit.getId();
+        // 异步执行 判题服务
+        CompletableFuture.runAsync(() -> {
+            judgeService.doJudge(questionSubmitId);
+        });
+        return questionSubmitId;
     }
 
     /**
