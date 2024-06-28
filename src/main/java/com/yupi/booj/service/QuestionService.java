@@ -2,10 +2,9 @@ package com.yupi.booj.service;
 
 import com.baomidou.mybatisplus.core.conditions.query.QueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
+import com.baomidou.mybatisplus.extension.service.IService;
 import com.yupi.booj.model.dto.question.QuestionQueryRequest;
 import com.yupi.booj.model.entity.Question;
-import com.yupi.booj.model.entity.Question;
-import com.baomidou.mybatisplus.extension.service.IService;
 import com.yupi.booj.model.vo.QuestionVO;
 
 import javax.servlet.http.HttpServletRequest;

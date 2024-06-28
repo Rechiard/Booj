@@ -1,6 +1,6 @@
 package com.yupi.booj.judge.strategy;
 
-import com.yupi.booj.model.dto.questionsubmit.JudgeInfo;
+import com.yupi.booj.judge.codesnadbox.model.JudgeInfo;
 
 public interface JudgeStrategy {
 

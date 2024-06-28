@@ -18,7 +18,7 @@ import static org.junit.jupiter.api.Assertions.*;
 @SpringBootTest
 class CodeSandboxTest {
 
-    // ´Óapplication.yamlÎÄ¼şÖĞ»ñÈ¡ĞÅÏ¢£¬Ä¬ÈÏÖµÎªexample
+    // ä»application.yamlæ–‡ä»¶ä¸­è·å–ä¿¡æ¯ï¼Œé»˜è®¤å€¼ä¸ºexample
     @Value("${codesandbox.type:example}")
     private String type;
 
@@ -39,7 +39,7 @@ class CodeSandboxTest {
 
     @Test
     void executeCodeByValue() {
-        // Í¨¹ı¹¤³§Ä£Ê½¶¯Ì¬Éú³É¶ÔÏó
+        // é€šè¿‡å·¥å‚æ¨¡å¼åŠ¨æ€ç”Ÿæˆå¯¹è±¡
         CodeSandbox codeSandbox = CodeSandboxFactory.newInstance(type);
         String code = "int main() { }";
         String language = QuestionSubmitLanguageEnum.JAVA.getValue();
@@ -55,11 +55,17 @@ class CodeSandboxTest {
 
     @Test
     void executeCodeByProxy() {
-        // Í¨¹ı¹¤³§Ä£Ê½¶¯Ì¬Éú³É¶ÔÏó
+        // é€šè¿‡å·¥å‚æ¨¡å¼åŠ¨æ€ç”Ÿæˆå¯¹è±¡
         CodeSandbox codeSandbox = CodeSandboxFactory.newInstance(type);
-        // Í¨¹ı´úÀíÀà£¬ÔÚ²»¸Ä±äÔ­ÓĞ¹¦ÄÜµÄÇ°ÌáÏÂ£¬½øĞĞÈÕÖ¾ÔöÇ¿
+        // é€šè¿‡ä»£ç†ç±»ï¼Œåœ¨ä¸æ”¹å˜åŸæœ‰åŠŸèƒ½çš„å‰æä¸‹ï¼Œè¿›è¡Œæ—¥å¿—å¢å¼º
         codeSandbox = new CodeSandboxProxy(codeSandbox);
-        String code = "int main() { }";
+        String code = "public class Main {\n" +
+                "    public static void main(String[] args) {\n" +
+                "        int a = Integer.valueOf(args[0]);\n" +
+                "        int b = Integer.valueOf(args[1]);\n" +
+                "        System.out.println(\"ç»“æœï¼š\" + (a + b));\n" +
+                "    }\n" +
+                "}\n";
         String language = QuestionSubmitLanguageEnum.JAVA.getValue();
         List<String> inputList = Arrays.asList("1 2", "3 4");
         ExecuteCodeRequest executeCodeRequest = ExecuteCodeRequest.builder()
@@ -75,7 +81,7 @@ class CodeSandboxTest {
         Scanner scanner = new Scanner(System.in);
         while(scanner.hasNext()){
             String type = scanner.next();
-            // ¸ù¾İÓÃ»§ÊäÈëµÄÉ³ÏäÀàĞÍ£¬¶¯Ì¬µÄ´´½¨²»Í¬É³ÏäÊµÀı¶ÔÏó
+            // æ ¹æ®ç”¨æˆ·è¾“å…¥çš„æ²™ç®±ç±»å‹ï¼ŒåŠ¨æ€çš„åˆ›å»ºä¸åŒæ²™ç®±å®ä¾‹å¯¹è±¡
             CodeSandbox codeSandbox = CodeSandboxFactory.newInstance(type);
             String code = "int main() { }";
             String language = QuestionSubmitLanguageEnum.JAVA.getValue();

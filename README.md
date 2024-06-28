@@ -1,181 +1,110 @@
-# SpringBoot 项目初始模板
+# Booj 在线编程平台
 
-> 作者：[程序员鱼皮](https://github.com/liyupi)
-> 仅分享于 [编程导航知识星球](https://yupi.icu)
+这是基于Vue3+Spring Boot+Spring Cloud微服务 + Docker的 **在线编程平台**（简称OJ）
 
-基于 Java SpringBoot 的项目初始模板，整合了常用框架和主流业务的示例代码。
+在系统前端，管理员可以创建、管理题目；用户可以自由搜索题目、阅读题目、编写并提交代码。 在系统后端，能够根据管理员设定的题目测试用例在代码沙箱中对代码进行编译、运行、判断输出是否正确。 其中，代码沙箱可以作为独立服务，提供给其他开发者使用。
 
-只需 1 分钟即可完成内容网站的后端！！！大家还可以在此基础上快速开发自己的项目。
+代码沙箱：https://github.com/Rechiard/code-sandbox
 
-[toc]
+改造的微服务版本：https://github.com/Rechiard/Booj-Cloud
 
-## 模板特点
+### 技术选型
 
-### 主流框架 & 特性
+前端：
 
-- Spring Boot 2.7.x（贼新）
-- Spring MVC
-- MyBatis + MyBatis Plus 数据访问（开启分页）
-- Spring Boot 调试工具和项目处理器
-- Spring AOP 切面编程
-- Spring Scheduler 定时任务
-- Spring 事务注解
+- Vue3
+- VueX状态管理
+- Arco Design组件库
+- OpenApi前端带阿米生成器
 
-### 数据存储
+后端：
 
-- MySQL 数据库
-- Redis 内存数据库
-- Elasticsearch 搜索引擎
-- 腾讯云 COS 对象存储
+- Java Spring Cloud + Spring Cloud Alibaba微服务
+    - Nacos注册中心
+    - OpenFeign客户端调用
+    - GateWay网关
+    - 聚合接口文档（knife4j）
+- Java Spring Boot
+- Java进程控制
+    - Java安全管理器
+    - Docker代码沙箱实现（https://github.com/Rechiard/code-sandbox）
+    - 虚拟机+远程开发
+- MyBatis-Plus、MySQL数据库
+- Redis分布式Session
+- RabbitMQ消息队列
+- **多种设计模式**
+    - 工厂模式（解决不同代码沙箱对象的按需创建）
+    - 代理模式（对方法进行日志增强）
+    - 策略模式（解决不同语言的特殊处理方法）
+    - 模板方法模式（解决不同代码沙箱的特定流程的不同）
 
-### 工具类
+### 项目架构：
 
-- Easy Excel 表格处理
-- Hutool 工具库
-- Apache Commons Lang3 工具类
-- Lombok 注解
+![image-20240628203025742](imgs\image-20240628203025742.png)
 
-### 业务特性
+### 项目的基本功能：
 
-- 业务代码生成器（支持自动生成 Service、Controller、数据模型代码）
-- Spring Session Redis 分布式登录
-- 全局请求响应拦截器（记录日志）
-- 全局异常处理器
-- 自定义错误码
-- 封装通用响应类
-- Swagger + Knife4j 接口文档
-- 自定义权限注解 + 全局校验
-- 全局跨域处理
-- 长整数丢失精度解决
-- 多环境配置
+1. 用户模块
+    - 注册
+    - 登录
+2. 题目模块
+    1. 管理员
+        - 创建题目
+        - 删除题目
+        - 修改题目
+    2. 用户
+        - 搜索题目
+        - 在线做题
+        - 提交题目代码
+3. 判题模块
+    - 提交判题（结果正确性）
+    - 错误处理（例如内存溢出、安全性、超时等）
+    - 自主实现代码沙箱（安全沙箱，用于执行用户的代码并返回结果）
+    - 开放接口（提供一个独立的新服务类似SDK）
 
+### 核心业务流程：
 
-## 业务功能
+![image-20240628202941636](imgs\image-20240628202941636.png)
 
-- 提供示例 SQL（用户、帖子、帖子点赞、帖子收藏表）
-- 用户登录、注册、注销、更新、检索、权限管理
-- 帖子创建、删除、编辑、更新、数据库检索、ES 灵活检索
-- 帖子点赞、取消点赞
-- 帖子收藏、取消收藏、检索已收藏帖子
-- 帖子全量同步 ES、增量同步 ES 定时任务
-- 支持微信开放平台登录
-- 支持微信公众号订阅、收发消息、设置菜单
-- 支持分业务的文件上传
-
-### 单元测试
-
-- JUnit5 单元测试
-- 示例单元测试类
-
-### 架构设计
-
-- 合理分层
+![image-20240628202937279](imgs\image-20240628202937279.png)
 
 
-## 快速上手
+### 项目展示：
 
-> 所有需要修改的地方鱼皮都标记了 `todo`，便于大家找到修改的位置~
+登录页面：
 
-### MySQL 数据库
+![image-20240628204816283](imgs\image-20240628204816283.png)
 
-1）修改 `application.yml` 的数据库配置为你自己的：
+题目浏览主页：
 
-```yml
-spring:
-  datasource:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    url: jdbc:mysql://localhost:3306/my_db
-    username: root
-    password: 123456
-```
+![image-20240628204649080](imgs\image-20240628204649080.png)
 
-2）执行 `sql/create_table.sql` 中的数据库语句，自动创建库表
+做题页面：
 
-3）启动项目，访问 `http://localhost:8101/api/doc.html` 即可打开接口文档，不需要写前端就能在线调试接口了~
-
-![](doc/swagger.png)
-
-### Redis 分布式登录
-
-1）修改 `application.yml` 的 Redis 配置为你自己的：
-
-```yml
-spring:
-  redis:
-    database: 1
-    host: localhost
-    port: 6379
-    timeout: 5000
-    password: 123456
-```
-
-2）修改 `application.yml` 中的 session 存储方式：
-
-```yml
-spring:
-  session:
-    store-type: redis
-```
-
-3）移除 `MainApplication` 类开头 `@SpringBootApplication` 注解内的 exclude 参数：
-
-修改前：
-
-```java
-@SpringBootApplication(exclude = {RedisAutoConfiguration.class})
-```
-
-修改后：
+![image-20240628204943570](imgs\image-20240628204943570.png)
 
 
-```java
-@SpringBootApplication
-```
 
-### Elasticsearch 搜索引擎
+题目提交页面：
 
-1）修改 `application.yml` 的 Elasticsearch 配置为你自己的：
+![image-20240628204951617](imgs\image-20240628204951617.png)
 
-```yml
-spring:
-  elasticsearch:
-    uris: http://localhost:9200
-    username: root
-    password: 123456
-```
+管理题目页面：
 
-2）复制 `sql/post_es_mapping.json` 文件中的内容，通过调用 Elasticsearch 的接口或者 Kibana Dev Tools 来创建索引（相当于数据库建表）
+![image-20240628204921725](imgs\image-20240628204921725.png)
 
-```
-PUT post_v1
-{
- 参数见 sql/post_es_mapping.json 文件
-}
-```
+创新（更新）题目页面：
 
-这步不会操作的话需要补充下 Elasticsearch 的知识，或者自行百度一下~
+![image-20240628204854508](imgs\image-20240628204854508.png)
 
-3）开启同步任务，将数据库的帖子同步到 Elasticsearch
+![image-20240628204849447](imgs\image-20240628204849447.png)
 
-找到 job 目录下的 `FullSyncPostToEs` 和 `IncSyncPostToEs` 文件，取消掉 `@Component` 注解的注释，再次执行程序即可触发同步：
+### 收获：
 
-```java
-// todo 取消注释开启任务
-//@Component
-```
-
-### 业务代码生成器
-
-支持自动生成 Service、Controller、数据模型代码，配合 MyBatisX 插件，可以快速开发增删改查等实用基础功能。
-
-找到 `generate.CodeGenerator` 类，修改生成参数和生成路径，并且支持注释掉不需要的生成逻辑，然后运行即可。
-
-```
-// 指定生成参数
-String packageName = "com.yupi.booj";
-String dataName = "用户评论";
-String dataKey = "userComment";
-String upperDataKey = "UserComment";
-```
-
-生成代码后，可以移动到实际项目中，并且按照 `// todo` 注释的提示来针对自己的业务需求进行修改。
+- 将单体项目改造成微服务项目
+- 保证用户执行代码的安全（Java安全管理器，Docker隔离运行环境）
+- 使用消息队列解耦程序（将题目提交与判题分别放入生产者与消费者）
+- 巧妙的利用设计模式优化代码（工厂模式、代理模式、策略模式、模板模式）
+- 利用Java程序操作Docker隔离程序并运行Docker（DockerClient）
+- 学会怎么远程开发（利用idea的ssh开发模式）
+- 学会了一些少见bug的解决办法（sessionId问题，循环依赖问题等等）
